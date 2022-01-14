@@ -14,9 +14,9 @@ pub fn main_test(filename: &str){
     graph_wrapper.fromNGfa(&graph, "_");
     eprintln!("{}", graph.paths.len());
     eprintln!("{}", graph_wrapper.genomes[0].0);
-
+    eprintln!("ress {}", 10/3);
     eprintln!("Get graph2pos");
-    let u = graph2pos(&graph);
+    eprintln!("daskd {:?} ", g2p(&graph));
 
 
 
@@ -24,46 +24,108 @@ pub fn main_test(filename: &str){
 
 }
 
+
+pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
+    let mut vec_new: Vec<Vec<T>> = Vec::new();
+    for x in 0..numb{
+        vec_new.push(Vec::new());
+    }
+    let each_size = (it.len() as f64 /numb as f64).ceil() as usize;
+    eprintln!("Number {}", each_size);
+
+    let mut count = 0;
+    for x in it{
+
+        vec_new[count/numb].push(x);
+
+    }
+    vec_new
+
+}
+
+pub fn g2p(graph: & gfaR_wrapper::NGfa) {
+
+    let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
+    let mut result = Arc::new(Mutex::new(result_hm));
+    let mut hm = Arc::new(graph.nodes.clone());
+    let k = graph.paths.clone();
+    let k2 = chunk_inplace(k, 2);
+    let mut handles: Vec<_> = Vec::new();
+    println!("sda das {}", k2.len());
+    for chunk in k2{
+        let mut g2 = Arc::clone(&hm);
+        let mut tess1 = Arc::clone(&result);
+        let handle = thread::spawn(move || {
+            eprintln!("I spawned");
+            for c in chunk{
+                let mut position = 0;
+                let mut vec_pos: Vec<usize> = Vec::new();
+                for y in c.nodes.iter(){
+                    position += g2.get(y).unwrap().seq.len();
+                    vec_pos.push(position);
+                }
+                let mut lo = tess1.lock().unwrap();
+                lo.insert(c.name.clone(), vec_pos);
+
+
+            }
+            eprintln!("Im done");
+        });
+        handles.push(handle);
+        eprintln!("hello");
+    }
+
+    let mut count = 0;
+    for handle in handles {
+        eprintln!("{}", count);
+        count += 1;
+        handle.join().unwrap()
+    }
+
+
+
+}
+
 /// Convert index in the graph to positional information
 /// Index based - not node based
 /// [10,30,31,32,45]
-pub fn graph2pos(graph: & gfaR_wrapper::NGfa) -> HashMap<String, Vec<usize>>{
-    let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
-    let result = Arc::new(Mutex::new(HashMap::new()));
-
-
-    let mut handles: Vec<_> = Vec::new();
-    let chunks = graph.paths.chunks(graph.paths.len()/3);
-    let mut t2= Arc::new(graph.paths.clone());
-    eprintln!("{}", t2.len());
-    for chunk in 0..4 {
-        let mut tess1 = Arc::clone(&result);
-        let mut t3 = Arc::clone(&t2);
-        eprintln!("lel {}", mutt2.len());
-        let handle = thread::spawn(move || {
-            //let t = t3.len();
-            let mut g = tess1.lock().unwrap();
-            g.insert("10", chunk);
-        });
-            handles.push(handle);
-            // for x in graph.paths.iter
-            // let mut vec_pos: Vec<usize> = Vec::new();
-            // let mut position: usize = 0;
-            // for y in x.nodes.iter(){
-            //     position += graph.nodes.get(y).unwrap().seq.len();
-            //     vec_pos.push(position);
-            // }
-            // result_hm.insert(x.name.clone(), vec_pos);
-
-    }
-
-    // wait for each thread to finish
-    for handle in handles {
-        handle.join().unwrap()
-    }
-    println!("{:?}", result);
-    result_hm
-}
+// pub fn graph2pos(graph: & gfaR_wrapper::NGfa) -> HashMap<String, Vec<usize>>{
+//     let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
+//     let result = Arc::new(Mutex::new(HashMap::new()));
+//
+//
+//     let mut handles: Vec<_> = Vec::new();
+//     let chunks = graph.paths.chunks(graph.paths.len()/3);
+//     let mut t2= Arc::new(graph.paths.clone());
+//     eprintln!("{}", t2.len());
+//     for chunk in 0..4 {
+//         let mut tess1 = Arc::clone(&result);
+//         let mut t3 = Arc::clone(&t2);
+//         eprintln!("lel {}", mutt2.len());
+//         let handle = thread::spawn(move || {
+//             //let t = t3.len();
+//             let mut g = tess1.lock().unwrap();
+//             g.insert("10", chunk);
+//         });
+//             handles.push(handle);
+//             // for x in graph.paths.iter
+//             // let mut vec_pos: Vec<usize> = Vec::new();
+//             // let mut position: usize = 0;
+//             // for y in x.nodes.iter(){
+//             //     position += graph.nodes.get(y).unwrap().seq.len();
+//             //     vec_pos.push(position);
+//             // }
+//             // result_hm.insert(x.name.clone(), vec_pos);
+//
+//     }
+//
+//     // wait for each thread to finish
+//     for handle in handles {
+//         handle.join().unwrap()
+//     }
+//     println!("{:?}", result);
+//     result_hm
+// }
 
 pub fn iterate_test(graph: &NGfa){
     let pairs = get_all_pairs(graph);

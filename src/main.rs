@@ -1,5 +1,5 @@
 use crate::paf::Paf;
-use crate::core::{main_test, graph2pos};
+use crate::core::{main_test};
 
 mod paf;
 mod core;
