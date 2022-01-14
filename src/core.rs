@@ -16,7 +16,8 @@ pub fn main_test(filename: &str){
     eprintln!("{}", graph_wrapper.genomes[0].0);
     eprintln!("ress {}", 10/3);
     eprintln!("Get graph2pos");
-    eprintln!("daskd {:?} ", g2p(&graph));
+    eprintln!("daskd {:?} ", g2p(&graph, 2));
+    iterate_test(&graph);
 
 
 
@@ -43,13 +44,13 @@ pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
 
 }
 
-pub fn g2p(graph: & gfaR_wrapper::NGfa) {
+pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) {
 
     let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
     let mut result = Arc::new(Mutex::new(result_hm));
     let mut hm = Arc::new(graph.nodes.clone());
     let k = graph.paths.clone();
-    let k2 = chunk_inplace(k, 2);
+    let k2 = chunk_inplace(k, threads);
     let mut handles: Vec<_> = Vec::new();
     println!("sda das {}", k2.len());
     for chunk in k2{
@@ -128,14 +129,30 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa) {
 // }
 
 pub fn iterate_test(graph: &NGfa){
+    eprintln!("Iterate test");
     let pairs = get_all_pairs(graph);
-    eprintln!("Number of pairs {}", pairs.len());
-    let result = Arc::new(Mutex::new(0));
-    let chunks = pairs.chunks(pairs.len()/4 as usize);
-    // for pair in pairs.iter(){
-    //
-    //     iterate_path(pair);
-    // }
+
+    let g2 = graph.clone();
+    let pairs = get_all_pairs2(graph);
+    let chunks = chunk_inplace(pairs, 4);
+    let mut handles = Vec::new();
+    let mut last_shared = 0;
+
+    for chunk in chunks{
+        let handle = thread::spawn(move || {
+            for pair in chunk.iter(){
+                iterate_path(&(&pair.0, &pair.1));
+            }
+        });
+        handles.push(handle);
+    }
+
+    let mut count = 0;
+    for handle in handles {
+        eprintln!("{}", count);
+        count += 1;
+        handle.join().unwrap()
+    }
 }
 
 pub fn iterate_path(pair: &(&NPath, &NPath)) -> Vec<(usize, usize)>{
@@ -177,6 +194,23 @@ pub fn get_all_pairs(graph: &NGfa) -> Vec<(&NPath, &NPath)> {
             // println!("{} {}", path1.name, path2.name);
             pairs.push((path1, path2));
         }
+    }
+    pairs
+}
+
+
+/// Get all path pairs of a graph
+pub fn get_all_pairs2(graph: &NGfa) -> Vec<(NPath, NPath)> {
+
+    let mut pairs: Vec<(NPath, NPath)> = Vec::new();
+    let mut count = 0;
+    for path1 in graph.paths.iter(){
+        for path2 in graph.paths[count+1..].iter(){
+            // Optional for checking
+            // println!("{} {}", path1.name, path2.name);
+            pairs.push((path1.clone(), path2.clone()));
+        }
+        count += 1;
     }
     pairs
 }
