@@ -17,11 +17,12 @@ pub fn main_test(filename: &str){
     eprintln!("ress {}", 10/3);
     eprintln!("Get graph2pos");
     eprintln!("daskd {:?} ", g2p(&graph, 2));
-    iterate_test(&graph);
 
 
 
-    //iterate_test(&graph);
+
+
+    let gu = iterate_test(&graph);
 
 }
 
@@ -44,6 +45,9 @@ pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
 
 }
 
+
+/// Graph to position
+/// For each path it get the position for each index (node)
 pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) {
 
     let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
@@ -52,12 +56,12 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) {
     let k = graph.paths.clone();
     let k2 = chunk_inplace(k, threads);
     let mut handles: Vec<_> = Vec::new();
-    println!("sda das {}", k2.len());
+    //println!("sda das {}", k2.len());
     for chunk in k2{
         let mut g2 = Arc::clone(&hm);
         let mut tess1 = Arc::clone(&result);
         let handle = thread::spawn(move || {
-            eprintln!("I spawned");
+            //eprintln!("I spawned");
             for c in chunk{
                 let mut position = 0;
                 let mut vec_pos: Vec<usize> = Vec::new();
@@ -70,20 +74,15 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) {
 
 
             }
-            eprintln!("Im done");
+            //eprintln!("Im done");
         });
         handles.push(handle);
-        eprintln!("hello");
+        //eprintln!("hello");
     }
 
-    let mut count = 0;
     for handle in handles {
-        eprintln!("{}", count);
-        count += 1;
         handle.join().unwrap()
     }
-
-
 
 }
 
@@ -128,61 +127,136 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) {
 //     result_hm
 // }
 
+
+/// Wrapper for paf files
+/// multiple function will be added here
+/// E.g. iterate_path is the first function
+/// Multithreading base function
+/// Output are a list of PAFs
 pub fn iterate_test(graph: &NGfa){
     eprintln!("Iterate test");
-    let pairs = get_all_pairs(graph);
 
-    let g2 = graph.clone();
+    // Get pairs and chunk all pairs
     let pairs = get_all_pairs2(graph);
     let chunks = chunk_inplace(pairs, 4);
-    let mut handles = Vec::new();
-    let mut last_shared = 0;
 
+    let mut result = Vec::new();
+    let mut rm = Arc::new(Mutex::new(result));
+    let mut handles = Vec::new();
+
+    // Iterate over chunks
     for chunk in chunks{
+        let r = Arc::clone(&rm);
         let handle = thread::spawn(move || {
             for pair in chunk.iter(){
-                iterate_path(&(&pair.0, &pair.1));
+                let mut rr = r.lock().unwrap();
+                let h = bifurcation_simple(&(&pair.0, &pair.1));
+                rr.push(h);
             }
         });
         handles.push(handle);
     }
 
-    let mut count = 0;
     for handle in handles {
-        eprintln!("{}", count);
-        count += 1;
         handle.join().unwrap()
     }
+    eprintln!("{:?}", rm.lock().unwrap());
 }
 
-pub fn iterate_path(pair: &(&NPath, &NPath)) -> Vec<(usize, usize)>{
-    let distance = 0;
-    eprintln!("Get shared");
+
+/// Stop the paf when there is more than X "different" sequence
+pub fn bifurcation_simple(pair: &(&NPath, &NPath)) -> Vec<Paf>{
     let shared = get_shared_direction(pair.0, pair.1);
-    eprintln!("Done");
-    let shared2 = get_shared_direction_test(pair.0, pair.1);
+    let mut paf_vector: Vec<Paf> = Vec::new();
+    let shared_vec = get_shared_direction_test(pair.0, pair.1);
+
+    let mut open = false;
+    let mut paf_entry = Paf::new();
+    let mut last_index = 0;
     let mut last_shared = 0;
-    let k: Vec<Paf> = Vec::new();
-    let mut k1: Vec<(usize, usize)> = Vec::new();
-    let mut indexpairs: (usize, usize) = (0,0);
-    for x in 0..pair.0.nodes.len(){
-        if shared.contains(&(pair.0.nodes[x], pair.0.dir[x])){
-            if (pair.0.nodes[x], pair.0.dir[x]) == shared2.1[last_shared]{
-                //eprintln!("dajkldhajkshdjka");
-                last_shared += 1;
-            } else {
-                //eprintln!("dasjkldjsakldja");
-                for y in indexpairs.1..pair.1.nodes.len() {
-                    if (&pair.1.nodes[y], &pair.1.dir[y]) == (&pair.0.nodes[x], &pair.0.dir[x]) {
-                        indexpairs = (x.clone(), y.clone());
-                        k1.push(indexpairs);
+    // Inbetweens are for distance calculation
+    let mut inbetween1 = Vec::new();
+    let mut inbetween2 = Vec::new();
+    for x in 0..pair.0.nodes.len() {
+        // Check if pair is shared
+        let node = &(pair.0.nodes[x], pair.0.dir[x]);
+        if shared.contains(node) {
+            // Iterate over the other path (for the last shared) and check if it is the same
+            inbetween2 = Vec::new();
+            for x in last_index..pair.1.nodes.len() {
+
+                // If found
+                if node == &(pair.1.nodes[x], pair.1.dir[x]) {
+                    //eprintln!("hit");
+                    // If there is a open paf
+                    if open {
+                        if inbetween2.len() + inbetween1.len() > 20 {
+                            eprintln!("daksljdlka");
+                            makepaf();
+                            paf_vector.push(paf_entry);
+                            paf_entry = Paf::new();
+                            paf_entry.query_start = 1;
+                            paf_entry.flag.flag.push((1, 20));
+
+
+                        }
+                        paf_entry.flag.flag.push((1,20));
+                    } else {
+                        open = true;
+                        paf_entry = Paf::new();
+                        paf_entry.query_start = 1;
+                        paf_entry.flag.flag.push((1, 20));
+                        paf_entry.flag.flag.push((1,20));
                     }
+                    last_index = x.clone();
+                    inbetween2 = Vec::new();
+                    inbetween1 = Vec::new();
+                    break;
+                } else {
+                    inbetween2.push(x);
                 }
             }
+        } else {
+            inbetween1.push(x);
         }
     }
-    k1
+    paf_vector
 }
+
+pub fn makepaf(){
+    eprintln!("dsajkdhsajk");
+}
+
+
+
+// pub fn iterate_path(pair: &(&NPath, &NPath)) -> Vec<(usize, usize)>{
+//     let distance = 0;
+//     eprintln!("Get shared");
+//     let shared = get_shared_direction(pair.0, pair.1);
+//     eprintln!("Done");
+//     let shared2 = get_shared_direction_test(pair.0, pair.1);
+//     let mut last_shared = 0;
+//     let k: Vec<Paf> = Vec::new();
+//     let mut k1: Vec<(usize, usize)> = Vec::new();
+//     let mut indexpairs: (usize, usize) = (0,0);
+//     for x in 0..pair.0.nodes.len(){
+//         if shared.contains(&(pair.0.nodes[x], pair.0.dir[x])){
+//             if (pair.0.nodes[x], pair.0.dir[x]) == shared2.1[last_shared]{
+//                 //eprintln!("dajkldhajkshdjka");
+//                 last_shared += 1;
+//             } else {
+//                 //eprintln!("dasjkldjsakldja");
+//                 for y in indexpairs.1..pair.1.nodes.len() {
+//                     if (&pair.1.nodes[y], &pair.1.dir[y]) == (&pair.0.nodes[x], &pair.0.dir[x]) {
+//                         indexpairs = (x.clone(), y.clone());
+//                         k1.push(indexpairs);
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     k1
+// }
 
 /// Get all path pairs of a graph
 pub fn get_all_pairs(graph: &NGfa) -> Vec<(&NPath, &NPath)> {
@@ -227,7 +301,11 @@ pub fn get_shared_direction<'a>(test: &'a NPath, test2: &'a NPath) -> HashSet<(u
     g
 }
 
-pub fn get_shared_direction_test<'a>(test: &'a NPath, test2: &'a NPath) -> (Vec<(u32, bool)>, Vec<(u32, bool)>){
+
+
+///  For each shared
+pub fn get_shared_direction_test<'a>(test: &'a NPath, test2: &'a NPath)
+    -> ((Vec<(u32, bool)>, Vec<(u32, bool)>), (Vec<usize>, Vec<usize>)){
     println!("{} {}", test.name, test2.name);
     let i1: Vec<(u32, bool)> = Vec::from_iter(test.nodes.iter().cloned().zip(test.dir.iter().cloned()));
     let i2: Vec<(u32, bool)> = Vec::from_iter(test2.nodes.iter().cloned().zip(test2.dir.iter().cloned()));
@@ -239,36 +317,29 @@ pub fn get_shared_direction_test<'a>(test: &'a NPath, test2: &'a NPath) -> (Vec<
     let g: HashSet<(u32, bool)> = iter.intersection(&iter2).cloned().collect();
 
     let mut shared1 = Vec::new();
-    for x in i1.iter(){
+    let mut shared1_2 = Vec::new();
+    for (index, x) in i1.iter().enumerate(){
         if g.contains(x){
-            shared1.push(x.clone());
+            shared1.push((x.0,x.1));
+            shared1_2.push(index);
         }
     }
 
     let mut shared2 = Vec::new();
+    let mut shared2_2 = Vec::new();
     let mut last: &(u32, bool) = &(0,true);
-    for x in i2.iter(){
+    for (index, x) in i2.iter().enumerate(){
         if g.contains(x){
             if last == x{
                 println!("hello hello");
             }
             last = x;
-            shared2.push(x.clone());
+            shared2.push((x.0,x.1));
+            shared2_2.push(index);
         }
-    }
-    eprintln!("{}", g.len());
-    eprintln!("{}", shared1.len());
-    eprintln!("{}", shared2.len());
-    eprintln!("{}", i1.len());
-    eprintln!("{}", iter.len());
-    eprintln!("{}", iter2.len());
-    if shared1.len() == iter.len(){
-        eprintln!("{}", shared1.len());
-        eprintln!("{}", iter.len());
-        eprintln!("dajkdhsajkd");
     }
     // (Vec<u32, bool>, Vec<u32, bool>)
     //println!("The length of shared nodes is {}", g.len());
     //println!("Shared nodes {:?}", g);#
-    return (shared1, shared2)
+    return ((shared1, shared2), (shared1_2, shared2_2));
 }

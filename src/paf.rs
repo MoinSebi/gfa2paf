@@ -1,23 +1,25 @@
 use std::collections::HashMap;
 
+#[derive(Debug)]
 /// PAF
 pub struct Paf{
-    query_name: String,
-    query_len: u32,
-    query_start: u32,
-    query_end: u32,
-    strand: bool,
-    target_name: String,
-    target_len: u32,
-    target_start: u32,
-    target_end: u32,
-    matches_numb: u32,
-    alignment_len: u32,
-    mapping_qual: u8,
-    flag: cg_flag,
-    cg_flag: HashMap<u8, String>,
+    pub query_name: String,
+    pub query_len: u32,
+    pub query_start: u32,
+    pub query_end: u32,
+    pub strand: bool,
+    pub target_name: String,
+    pub target_len: u32,
+    pub target_start: u32,
+    pub target_end: u32,
+    pub matches_numb: u32,
+    pub alignment_len: u32,
+    pub mapping_qual: u8,
+    pub flag: cg_flag,
+    pub cg_flag: HashMap<u8, String>,
 
 }
+
 
 impl Paf {
     pub fn new() -> Self {
@@ -47,9 +49,9 @@ impl Paf {
 // 4 = deletion
 
 
-
+#[derive(Debug)]
 pub struct cg_flag{
-    flag: Vec<(u8, u32)>,
+    pub flag: Vec<(u8, u32)>,
 }
 
 impl cg_flag{
