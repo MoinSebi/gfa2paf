@@ -51,7 +51,7 @@ impl Paf {
 
 #[derive(Debug)]
 pub struct cg_flag{
-    pub flag: Vec<(u8, u32)>,
+    pub flag: Vec<(u32, u32)>,
 }
 
 impl cg_flag{

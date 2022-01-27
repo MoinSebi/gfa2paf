@@ -3,6 +3,7 @@ use crate::core::{main_test};
 
 mod paf;
 mod core;
+mod graph2pos;
 
 fn main() {
     let paf = Paf::new();

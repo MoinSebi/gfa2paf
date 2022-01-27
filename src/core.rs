@@ -4,14 +4,21 @@ use std::iter::FromIterator;
 use crate::paf::Paf;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use crate::graph2pos::{chunk_inplace, g2p};
 
+/// Helper main function
 pub fn main_test(filename: &str){
 
     // Reading the graph
     let mut graph:  NGfa = NGfa::new();
     graph.from_graph(filename);
+
+    // Create the graph wrapper
     let mut graph_wrapper: GraphWrapper = GraphWrapper::new();
     graph_wrapper.fromNGfa(&graph, "_");
+
+
+
     eprintln!("{}", graph.paths.len());
     eprintln!("{}", graph_wrapper.genomes[0].0);
     eprintln!("ress {}", 10/3);
@@ -22,110 +29,9 @@ pub fn main_test(filename: &str){
 
 
 
-    let gu = iterate_test(&graph);
+    let gu = iterate_test(&graph, 2);
 
 }
-
-
-pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
-    let mut vec_new: Vec<Vec<T>> = Vec::new();
-    for x in 0..numb{
-        vec_new.push(Vec::new());
-    }
-    let each_size = (it.len() as f64 /numb as f64).ceil() as usize;
-    eprintln!("Number {}", each_size);
-
-    let mut count = 0;
-    for x in it{
-
-        vec_new[count/numb].push(x);
-
-    }
-    vec_new
-
-}
-
-
-/// Graph to position
-/// For each path it get the position for each index (node)
-pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) {
-
-    let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
-    let mut result = Arc::new(Mutex::new(result_hm));
-    let mut hm = Arc::new(graph.nodes.clone());
-    let k = graph.paths.clone();
-    let k2 = chunk_inplace(k, threads);
-    let mut handles: Vec<_> = Vec::new();
-    //println!("sda das {}", k2.len());
-    for chunk in k2{
-        let mut g2 = Arc::clone(&hm);
-        let mut tess1 = Arc::clone(&result);
-        let handle = thread::spawn(move || {
-            //eprintln!("I spawned");
-            for c in chunk{
-                let mut position = 0;
-                let mut vec_pos: Vec<usize> = Vec::new();
-                for y in c.nodes.iter(){
-                    position += g2.get(y).unwrap().seq.len();
-                    vec_pos.push(position);
-                }
-                let mut lo = tess1.lock().unwrap();
-                lo.insert(c.name.clone(), vec_pos);
-
-
-            }
-            //eprintln!("Im done");
-        });
-        handles.push(handle);
-        //eprintln!("hello");
-    }
-
-    for handle in handles {
-        handle.join().unwrap()
-    }
-
-}
-
-/// Convert index in the graph to positional information
-/// Index based - not node based
-/// [10,30,31,32,45]
-// pub fn graph2pos(graph: & gfaR_wrapper::NGfa) -> HashMap<String, Vec<usize>>{
-//     let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
-//     let result = Arc::new(Mutex::new(HashMap::new()));
-//
-//
-//     let mut handles: Vec<_> = Vec::new();
-//     let chunks = graph.paths.chunks(graph.paths.len()/3);
-//     let mut t2= Arc::new(graph.paths.clone());
-//     eprintln!("{}", t2.len());
-//     for chunk in 0..4 {
-//         let mut tess1 = Arc::clone(&result);
-//         let mut t3 = Arc::clone(&t2);
-//         eprintln!("lel {}", mutt2.len());
-//         let handle = thread::spawn(move || {
-//             //let t = t3.len();
-//             let mut g = tess1.lock().unwrap();
-//             g.insert("10", chunk);
-//         });
-//             handles.push(handle);
-//             // for x in graph.paths.iter
-//             // let mut vec_pos: Vec<usize> = Vec::new();
-//             // let mut position: usize = 0;
-//             // for y in x.nodes.iter(){
-//             //     position += graph.nodes.get(y).unwrap().seq.len();
-//             //     vec_pos.push(position);
-//             // }
-//             // result_hm.insert(x.name.clone(), vec_pos);
-//
-//     }
-//
-//     // wait for each thread to finish
-//     for handle in handles {
-//         handle.join().unwrap()
-//     }
-//     println!("{:?}", result);
-//     result_hm
-// }
 
 
 /// Wrapper for paf files
@@ -133,13 +39,16 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) {
 /// E.g. iterate_path is the first function
 /// Multithreading base function
 /// Output are a list of PAFs
-pub fn iterate_test(graph: &NGfa){
+pub fn iterate_test(graph: &NGfa, threads: usize){
     eprintln!("Iterate test");
 
-    // Get pairs and chunk all pairs
+    // Get pairs and
     let pairs = get_all_pairs2(graph);
-    let chunks = chunk_inplace(pairs, 4);
+    let chunks = chunk_inplace(pairs, threads);
 
+    let k = Arc::new(g2p(graph, threads));
+
+    // Resultat
     let mut result = Vec::new();
     let mut rm = Arc::new(Mutex::new(result));
     let mut handles = Vec::new();
@@ -147,10 +56,11 @@ pub fn iterate_test(graph: &NGfa){
     // Iterate over chunks
     for chunk in chunks{
         let r = Arc::clone(&rm);
+        let mut r2 = Arc::clone(&k);
         let handle = thread::spawn(move || {
             for pair in chunk.iter(){
                 let mut rr = r.lock().unwrap();
-                let h = bifurcation_simple(&(&pair.0, &pair.1));
+                let h = bifurcation_simple(&(&pair.0, &pair.1), &r2);
                 rr.push(h);
             }
         });
@@ -165,7 +75,7 @@ pub fn iterate_test(graph: &NGfa){
 
 
 /// Stop the paf when there is more than X "different" sequence
-pub fn bifurcation_simple(pair: &(&NPath, &NPath)) -> Vec<Paf>{
+pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec<usize>>) -> Vec<Paf>{
     let shared = get_shared_direction(pair.0, pair.1);
     let mut paf_vector: Vec<Paf> = Vec::new();
     let shared_vec = get_shared_direction_test(pair.0, pair.1);
@@ -177,9 +87,13 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath)) -> Vec<Paf>{
     // Inbetweens are for distance calculation
     let mut inbetween1 = Vec::new();
     let mut inbetween2 = Vec::new();
+
+    // Iterate over each pair
     for x in 0..pair.0.nodes.len() {
         // Check if pair is shared
         let node = &(pair.0.nodes[x], pair.0.dir[x]);
+
+        // Wenn shared
         if shared.contains(node) {
             // Iterate over the other path (for the last shared) and check if it is the same
             inbetween2 = Vec::new();
@@ -189,24 +103,15 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath)) -> Vec<Paf>{
                 if node == &(pair.1.nodes[x], pair.1.dir[x]) {
                     //eprintln!("hit");
                     // If there is a open paf
-                    if open {
-                        if inbetween2.len() + inbetween1.len() > 20 {
-                            eprintln!("daksljdlka");
-                            makepaf();
-                            paf_vector.push(paf_entry);
-                            paf_entry = Paf::new();
-                            paf_entry.query_start = 1;
-                            paf_entry.flag.flag.push((1, 20));
-
-
-                        }
-                        paf_entry.flag.flag.push((1,20));
-                    } else {
-                        open = true;
+                    if inbetween2.len() + inbetween1.len() > 20 {
+                        eprintln!("daksljdlka");
+                        makepaf();
+                        paf_vector.push(paf_entry);
                         paf_entry = Paf::new();
                         paf_entry.query_start = 1;
                         paf_entry.flag.flag.push((1, 20));
-                        paf_entry.flag.flag.push((1,20));
+                    } else {
+                        paf_entry.flag.flag.push((1, 20));
                     }
                     last_index = x.clone();
                     inbetween2 = Vec::new();
