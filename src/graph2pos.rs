@@ -8,12 +8,12 @@ pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
         vec_new.push(Vec::new());
     }
     let each_size = (it.len() as f64 /numb as f64).ceil() as usize;
-    eprintln!("Number {}", each_size);
 
     let mut count = 0;
     for x in it{
 
-        vec_new[count/numb].push(x);
+        vec_new[count/each_size].push(x);
+        count += 1;
 
     }
     vec_new
