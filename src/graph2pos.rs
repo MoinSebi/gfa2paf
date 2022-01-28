@@ -23,6 +23,7 @@ pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
 
 
 /// Graph to position
+/// starting with 0
 /// For each path it get the position for each index (node)
 pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) -> HashMap<String, Vec<usize>>{
 
@@ -45,6 +46,7 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) -> HashMap<String, Vec<u
                     position += g2.get(y).unwrap().seq.len();
                     vec_pos.push(position);
                 }
+                vec_pos.insert(0, 0);
                 let mut lo = tess1.lock().unwrap();
                 lo.insert(c.name.clone(), vec_pos);
 

@@ -30,8 +30,8 @@ impl Paf {
             query_end: 10,
             strand: true,
             target_name: s2.clone(),
-            target_len: tstart.clone(),
-            target_start: 100,
+            target_len: tlen.clone(),
+            target_start: tstart.clone(),
             target_end: 32,
             matches_numb: 32,
             alignment_len: 32,
@@ -45,17 +45,19 @@ impl Paf {
         let mut s = "".to_string();
         for x in self.flag.flag.iter(){
             if x.0 == 1{
+                s.push_str(&x.1.clone().to_string());
                 s.push_str("=");
-                s.push_str(&x.1.clone().to_string());
             } else if x.0 == 2{
+                s.push_str(&x.1.clone().to_string());
                 s.push_str("I");
-                s.push_str(&x.1.clone().to_string());
             } else if x.0 == 3 {
+
+                s.push_str(&x.1.clone().to_string());
                 s.push_str("D");
-                s.push_str(&x.1.clone().to_string());
             } else {
-                s.push_str("M");
+
                 s.push_str(&x.1.clone().to_string());
+                s.push_str("X");
             }
         }
         s
@@ -72,7 +74,7 @@ impl Paf {
     }
 
     pub fn printall(self: &Self){
-        println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tcg:Z:{}",
         self.query_name,
         self.query_len,
         self.query_start,
@@ -84,7 +86,8 @@ impl Paf {
         self.target_end,
         self.matches_numb,
         self.alignment_len,
-        self.mapping_qual)
+        self.mapping_qual,
+        self.printing())
     }
 
 }

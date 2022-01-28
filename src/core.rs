@@ -54,6 +54,7 @@ pub fn iterate_test(graph: &NGfa, threads: usize) -> Vec<Vec<Paf>>{
     let chunks = chunk_inplace(pairs, threads);
 
     let k = Arc::new(g2p(graph, threads));
+    println!("jok {:?}", k);
     let k2 = Arc::new(graph.nodes.clone());
 
     // Resultat
@@ -103,6 +104,7 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
     let mut paf_entry = Paf::new(&pair.0.name, &pair.1.name, &0, &0, &0,&0);
 
     let mut last_index = 0;
+    let mut last_i = 0;
     let mut last_shared = 0;
     // Inbetweens are for distance calculation
     let mut distance1: u32 = 0;
@@ -130,14 +132,17 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
                 println!("Das is der node {:?}", node);
                 println!("Das schau ich gerade an {:?}", (pair.1.nodes[y], pair.1.dir[y]));
                 if node == &(pair.1.nodes[y], pair.1.dir[y]) {
+                    println!("iii {}", last_i);
                     eprintln!("hit");
                     // If there is a open paf
                     if open {
                         println!("{} {}", distance1, distance2);
                         if (distance1+ distance2) ==0{
+                            last_i = x;
                             println!("is zero");
                             paf_entry.flag.flag.push((1,g2n.get(pair.1.nodes.get(y).unwrap()).unwrap().len as u32))
                         } else if (distance1 + distance2) < 20{
+                            last_i = x;
                             if distance1 == 0 {
                                 paf_entry.flag.flag.push((2,distance2));
                                 paf_entry.flag.flag.push((1, g2n.get(pair.1.nodes.get(y).unwrap()).unwrap().len as u32))
@@ -160,13 +165,14 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
                                 paf_entry.flag.flag.push((1, g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32))
                             }
                         } else {
-                            paf_entry.query_end = gfa2pos.get(&pair.1.name).unwrap()[y] as u32;
-                            paf_entry.target_end = gfa2pos.get(&pair.0.name).unwrap()[x] as u32;
+                            paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
+                            paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;
                             paf_vector.push(paf_entry.clone());
                             paf_entry = Paf::new(&pair.0.name, &pair.1.name, &(gfa2pos.get(&pair.0.name).unwrap()[x] as u32), &(gfa2pos.get(&pair.1.name).unwrap()[y] as u32), &(maxn1 as u32), &(maxn2 as u32));
                             paf_entry.flag.flag.push((1, g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32));
 
                             open = true;
+                            last_i = x;
                         }
                     }
                     else {
@@ -189,6 +195,8 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
         } else {
             if distance1 > 20{
                 if open{
+                    paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
+                    paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;
                     paf_vector.push(paf_entry.clone());
 
                 }
@@ -198,6 +206,8 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
         }
     }
     if open{
+        paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
+        paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;
         paf_vector.push(paf_entry.clone())
     }
     if paf_vector.len() == 0{
