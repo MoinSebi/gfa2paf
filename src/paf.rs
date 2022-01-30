@@ -73,7 +73,18 @@ impl Paf {
         }
     }
 
-    pub fn printall(self: &Self){
+    pub fn alignment_length(self: &mut Self){
+        let mut lenns = 0;
+        for x in self.flag.flag.iter(){
+            lenns += x.1;
+
+        }
+        self.alignment_len = lenns;
+    }
+
+    pub fn printall(self: & mut Self){
+        self.alignment_length();
+        self.matches();
         println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tcg:Z:{}",
         self.query_name,
         self.query_len,

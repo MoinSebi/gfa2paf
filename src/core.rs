@@ -30,10 +30,10 @@ pub fn main_test(filename: &str){
 
 
 
-    let gu = iterate_test(&graph, 1);
-    for x in gu.iter(){
-        for y in x.iter(){
-            y.printall();
+    let mut gu = iterate_test(&graph, 1);
+    for x in 0..gu.len(){
+        for mut y in 0..gu[x].len(){
+            gu[x][y].printall()
         }
     }
     //println!("{:?}", gu)
