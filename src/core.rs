@@ -88,7 +88,7 @@ pub fn iterate_test(graph: &NGfa, threads: usize) -> Vec<Vec<Paf>>{
 pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec<usize>>, g2n: &HashMap<u32, NNode>) -> Vec<Paf>{
     let shared = get_shared_direction(pair.0, pair.1);
     let mut paf_vector: Vec<Paf> = Vec::new();
-    let shared_vec = get_shared_direction_test(pair.0, pair.1);
+    let shared_vec =  (pair.0, pair.1);
 
 
     let name1 = pair.0.name.clone();
@@ -212,55 +212,6 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
         println!("{} {}", pair.1.name, pair.0.name);
     }
     paf_vector
-}
-
-pub fn makepaf(){
-    eprintln!("dsajkdhsajk");
-}
-
-
-
-// pub fn iterate_path(pair: &(&NPath, &NPath)) -> Vec<(usize, usize)>{
-//     let distance = 0;
-//     eprintln!("Get shared");
-//     let shared = get_shared_direction(pair.0, pair.1);
-//     eprintln!("Done");
-//     let shared2 = get_shared_direction_test(pair.0, pair.1);
-//     let mut last_shared = 0;
-//     let k: Vec<Paf> = Vec::new();
-//     let mut k1: Vec<(usize, usize)> = Vec::new();
-//     let mut indexpairs: (usize, usize) = (0,0);
-//     for x in 0..pair.0.nodes.len(){
-//         if shared.contains(&(pair.0.nodes[x], pair.0.dir[x])){
-//             if (pair.0.nodes[x], pair.0.dir[x]) == shared2.1[last_shared]{
-//                 //eprintln!("dajkldhajkshdjka");
-//                 last_shared += 1;
-//             } else {
-//                 //eprintln!("dasjkldjsakldja");
-//                 for y in indexpairs.1..pair.1.nodes.len() {
-//                     if (&pair.1.nodes[y], &pair.1.dir[y]) == (&pair.0.nodes[x], &pair.0.dir[x]) {
-//                         indexpairs = (x.clone(), y.clone());
-//                         k1.push(indexpairs);
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     k1
-// }
-
-/// Get all path pairs of a graph
-pub fn get_all_pairs(graph: &NGfa) -> Vec<(&NPath, &NPath)> {
-
-    let mut pairs: Vec<(&NPath, &NPath)> = Vec::new();
-    for (i1, path1) in graph.paths.iter().enumerate(){
-        for path2 in graph.paths[i1+1..].iter(){
-            // Optional for checking
-            // println!("{} {}", path1.name, path2.name);
-            pairs.push((path1, path2));
-        }
-    }
-    pairs
 }
 
 
