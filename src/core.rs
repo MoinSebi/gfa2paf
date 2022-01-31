@@ -28,8 +28,6 @@ pub fn main_test(filename: &str){
 
 
 
-
-
     let mut gu = iterate_test(&graph, 1);
     for x in 0..gu.len(){
         for mut y in 0..gu[x].len(){

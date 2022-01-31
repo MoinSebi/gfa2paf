@@ -35,7 +35,7 @@ impl Paf {
             target_end: 32,
             matches_numb: 32,
             alignment_len: 32,
-            mapping_qual: 8,
+            mapping_qual: 255,
             flag: cg_flag::new(),
             cg_flag: HashMap::new(),
         }
@@ -67,10 +67,11 @@ impl Paf {
     pub fn matches(self: & mut Self){
         let mut count = 0;
         for x in self.flag.flag.iter(){
-            if x.0 == 0{
+            if x.0 == 1{
                 count += x.1;
             }
         }
+        self.matches_numb = count;
     }
 
     pub fn alignment_length(self: &mut Self){
