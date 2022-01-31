@@ -8,6 +8,7 @@ use clap::{App, Arg};
 
 
 fn main() {
+    eprintln!("Running gfa2paf");
     let matches = App::new("panSV")
         .version("0.1.0")
         .author("Sebastian V")
