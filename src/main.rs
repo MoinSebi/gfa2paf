@@ -20,6 +20,11 @@ fn main() {
             .about("Sets the input file to use")
             .takes_value(true)
             .required(true))
+        .arg(Arg::new("threads")
+            .short('t')
+            .long("threads")
+            .about("Number of threads")
+            .takes_value(true))
 
 
         .arg(Arg::new("simple")
@@ -35,7 +40,8 @@ fn main() {
 
 
     let gfa = matches.value_of("gfa").unwrap();
+    let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
     let old = "/home/svorbrugg_local/panSV/graphs/testGraph.gfa";
-    main_test(gfa);
+    main_test(gfa, threads);
     println!("Hello, world!");
 }
