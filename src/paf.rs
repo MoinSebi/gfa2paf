@@ -1,5 +1,35 @@
 use std::collections::HashMap;
 
+
+
+#[derive(Debug, Clone)]
+/// PAF file
+pub struct Paf_file{
+    pub paf_entries: Vec<Paf>,
+    paf_len: usize,
+    paf_flags: HashMap<u8, String>,
+}
+
+impl Paf_file{
+    pub fn new() -> Self{
+        Self{
+            paf_entries: Vec::new(),
+            paf_len: 0,
+            paf_flags: HashMap::new(),
+        }
+    }
+
+    pub fn to_file(self: &Self, filename: &str){
+        for x in self.paf_entries{
+            paf_file[x].printall();
+
+        }
+    }
+
+}
+
+
+
 #[derive(Debug, Clone)]
 /// PAF
 pub struct Paf{

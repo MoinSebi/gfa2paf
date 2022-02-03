@@ -1,35 +1,13 @@
 use gfaR_wrapper::{NGfa, GraphWrapper, NPath, NNode};
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
-use crate::paf::Paf;
+use crate::paf::{Paf, Paf_file};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use crate::graph2pos::{chunk_inplace, g2p};
 use std::cmp::min;
 
-/// Helper main function
-pub fn main_test(filename: &str, threads: usize){
-    eprintln!("Read the graph");
-    // Reading the graph
-    let mut graph:  NGfa = NGfa::new();
-    graph.from_graph(filename);
 
-    // Create the graph wrapper
-    let mut graph_wrapper: GraphWrapper = GraphWrapper::new();
-    graph_wrapper.fromNGfa(&graph, "_");
-
-
-
-
-    let mut gu = iterate_test(&graph, threads);
-    for x in 0..gu.len(){
-        for mut y in 0..gu[x].len(){
-            gu[x][y].printall()
-        }
-    }
-    //println!("{:?}", gu)
-
-}
 
 
 /// Wrapper for paf files
@@ -37,7 +15,7 @@ pub fn main_test(filename: &str, threads: usize){
 /// E.g. iterate_path is the first function
 /// Multithreading base function
 /// Output are a list of PAFs
-pub fn iterate_test(graph: &NGfa, threads: usize) -> Vec<Vec<Paf>>{
+pub fn iterate_test(graph: &NGfa, threads: usize, paffile: &mut Paf_file) {
     eprintln!("Make pairs and chunks");
     // Get pairs and
     let pairs = get_all_pairs2(graph);
@@ -67,7 +45,7 @@ pub fn iterate_test(graph: &NGfa, threads: usize) -> Vec<Vec<Paf>>{
 
                 let h = bifurcation_simple(&(&pair.0, &pair.1), &r2, &r3, 20);
                 let mut rr = r.lock().unwrap();
-                rr.push(h);
+                rr.extend(h);
             }
         });
         handles.push(handle);
@@ -76,10 +54,14 @@ pub fn iterate_test(graph: &NGfa, threads: usize) -> Vec<Vec<Paf>>{
 
     for handle in handles {
         handle.join().unwrap()
+
     }
     //eprintln!("{:?}", rm.lock().unwrap());
+
     let i = rm.lock().unwrap().clone();
-    i
+    for x in i{
+        paffile.paf_entries.push(x);
+    }
 }
 
 
