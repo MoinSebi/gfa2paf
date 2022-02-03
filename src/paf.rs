@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-
+use std::fs::File;
+use std::io::{Write, BufWriter};
 
 
 #[derive(Debug, Clone)]
@@ -19,10 +20,20 @@ impl Paf_file{
         }
     }
 
-    pub fn to_file(self: &Self, filename: &str){
-        for x in self.paf_entries{
-            paf_file[x].printall();
+    pub fn make_stats(self: &mut Self){
+        for x in 0..self.paf_entries.len(){
+            self.paf_entries[x].matches();
+            self.paf_entries[x].alignment_length();
+        }
+    }
 
+    pub fn to_file(self: & mut Self, filename: &str){
+        let file =  File::create(filename).expect("Unable to create file");
+        let mut file = BufWriter::new(file);
+
+        for x in 0..self.paf_entries.len(){
+            let p = self.paf_entries[x].printall();
+            write!(file, "{}", p).expect("Not working");
         }
     }
 
@@ -113,23 +124,23 @@ impl Paf {
         self.alignment_len = lenns;
     }
 
-    pub fn printall(self: & mut Self){
-        self.alignment_length();
-        self.matches();
-        println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tcg:Z:{}",
-        self.query_name,
-        self.query_len,
-        self.query_start,
-        self.query_end,
-        helpdir(&self.strand),
-        self.target_name,
-        self.target_len,
-        self.target_start,
-        self.target_end,
-        self.matches_numb,
-        self.alignment_len,
-        self.mapping_qual,
-        self.printing())
+    pub fn printall(self: & mut Self) -> String {
+
+        let output = format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tcg:Z:{}",
+                             self.query_name,
+                             self.query_len,
+                             self.query_start,
+                             self.query_end,
+                             helpdir(&self.strand),
+                             self.target_name,
+                             self.target_len,
+                             self.target_start,
+                             self.target_end,
+                             self.matches_numb,
+                             self.alignment_len,
+                             self.mapping_qual,
+                             self.printing());
+        output
     }
 
 }
