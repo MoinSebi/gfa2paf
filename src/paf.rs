@@ -24,6 +24,7 @@ impl Paf_file{
         for x in 0..self.paf_entries.len(){
             self.paf_entries[x].matches();
             self.paf_entries[x].alignment_length();
+            self.paf_entries[x].merging();
         }
     }
 
@@ -82,6 +83,25 @@ impl Paf {
         }
     }
 
+    pub fn merging(self: & mut Self){
+        eprintln!("{:?}", self.flag.flag);
+        let mut vec_new: Vec<(u32, u32)> = Vec::new();
+
+        let mut element: (u32, u32)  = (0,0);
+        for x in 0..self.flag.flag.len(){
+
+            if element.0 == self.flag.flag[x].0{
+                element.1 += self.flag.flag[x].1.clone();
+            } else {
+                vec_new.push(element);
+                element = self.flag.flag[x].clone();
+            }
+        }
+        vec_new.pop();
+        vec_new.push(element);
+        self.flag.flag = vec_new;
+    }
+
     pub fn printing(self: &Self) -> String{
         let mut s = "".to_string();
         for x in self.flag.flag.iter(){
@@ -126,7 +146,7 @@ impl Paf {
 
     pub fn printall(self: & mut Self) -> String {
 
-        let output = format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tcg:Z:{}",
+        let output = format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tcg:Z:{}\n",
                              self.query_name,
                              self.query_len,
                              self.query_start,

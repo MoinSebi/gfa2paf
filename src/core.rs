@@ -8,8 +8,6 @@ use crate::graph2pos::{chunk_inplace, g2p};
 use std::cmp::min;
 
 
-
-
 /// Wrapper for paf files
 /// multiple function will be added here
 /// E.g. iterate_path is the first function
@@ -103,14 +101,17 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
 
         // Wenn shared
         if shared.contains(node) {
+            eprintln!("{}", "hit");
             // Iterate over the other path (for the last shared) and check if it is the same
             distance2 = 0;
             let mut p = 0;
             'tt: for y in last_index..pair.1.nodes.len() {
+                eprintln!("dsadada");
                 p = y.clone();
                 // If found
                 if node == &(pair.1.nodes[y], pair.1.dir[y]) {
                     // If there is a open paf
+                    eprintln!("{}", open);
                     if open {
                         if (distance1+ distance2) ==0{
                             last_i = x;
@@ -138,58 +139,83 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
                                 }
                                 paf_entry.flag.flag.push((1, g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32))
                             }
+
+                            // Closing paf and create new one
                         } else {
                             paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
                             paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;
                             paf_vector.push(paf_entry.clone());
+
+                            // New paf
                             paf_entry = Paf::new(&pair.0.name, &pair.1.name, &(gfa2pos.get(&pair.0.name).unwrap()[x] as u32), &(gfa2pos.get(&pair.1.name).unwrap()[y] as u32), &(maxn1 as u32), &(maxn2 as u32));
                             paf_entry.flag.flag.push((1, g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32));
 
+                            // Still open and update last_i
                             open = true;
                             last_i = x;
                         }
                     }
+                        // there is nothing open
+                        // Open a new
                     else {
+                        eprintln!("tttt");
                         paf_entry = Paf::new(&pair.0.name, &pair.1.name, &(gfa2pos.get(&pair.0.name).unwrap()[x] as u32), &(gfa2pos.get(&pair.1.name).unwrap()[y] as u32), &(maxn1 as u32), &(maxn2 as u32));
 
                         paf_entry.flag.flag.push((1, g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32));
                         open = true;
 
                     }
+
+                    // No matter what: new thing i snew
+                    // and the distance is reset
+                    // Dont go on with searching
                     last_index = y.clone() +1;
                     distance2 = 0;
                     distance1 = 0;
                     break 'tt;
+
+
+                    // Not found in second genome
                 } else {
-                    distance2 += g2n.get(pair.1.nodes.get(y).unwrap()).unwrap().len as u32;
-                    if (distance1 + distance2) > maxdistance as u32{
-                        if open{
-                            paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
-                            paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;
-                            paf_vector.push(paf_entry.clone());
+                    if open{
+                        distance2 += g2n.get(pair.1.nodes.get(y).unwrap()).unwrap().len as u32;
+                        if (distance1 + distance2) > maxdistance as u32{
+                            if open{
+                                paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
+                                paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;
+                                paf_vector.push(paf_entry.clone());
+                                distance1 = 0;
+                                distance2 = 0;
 
+                            }
+                            open = false;
+
+                            break 'tt;
                         }
-                        open = false;
-
                     }
-                    break 'tt;
                 }
             }
-            //eprintln!("{} {} {} {}", p, x, pair.0.nodes.get(x).unwrap(), pair.1.nodes.len())
+
+
+
+            // The first genome has new genome
         } else {
-            if distance1 > maxdistance as u32{
-                if open{
+            if open{
+
+                if distance1 > maxdistance as u32{
                     paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
                     paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;
                     paf_vector.push(paf_entry.clone());
+                    open = false;
 
+                } else {
+                    distance1 += g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32;
                 }
-                open = false;
             }
-            // This is not optimized
-            distance1 += g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32;
         }
     }
+
+    // Add "open" pafs to the data set
     if open{
         paf_entry.target_end = gfa2pos.get(&pair.1.name).unwrap()[last_index] as u32;
         paf_entry.query_end = gfa2pos.get(&pair.0.name).unwrap()[last_i+1] as u32;

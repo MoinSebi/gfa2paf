@@ -66,5 +66,6 @@ fn main() {
         iterate_test(&graph, threads, & mut paf_result);
     }
 
+    paf_result.make_stats();
     paf_result.to_file("test");
 }
