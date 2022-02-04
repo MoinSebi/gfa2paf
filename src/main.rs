@@ -1,4 +1,4 @@
-use crate::paf::{Paf, Paf_file};
+use crate::paf::{PafFile};
 use crate::core::{iterate_test};
 
 mod paf;
@@ -37,12 +37,14 @@ fn main() {
             .short('o')
             .long("output")
             .about("output file")
-            .takes_value(true)).get_matches();
+            .takes_value(true)
+            .required(true)).get_matches();
 
 
 
+    let output = matches.value_of("output").unwrap();
     let gfa = matches.value_of("gfa").unwrap();
-    let old = "/home/svorbrugg_local/panSV/graphs/testGraph.gfa";
+    let _old = "/home/svorbrugg_local/panSV/graphs/testGraph.gfa";
 
     let mut threads = 1;
     if matches.is_present("threads"){
@@ -59,13 +61,12 @@ fn main() {
 
 
 
-    let mut paf_file: Vec<Paf> = Vec::new();
-    let mut paf_result = Paf_file::new();
+    let mut paf_result = PafFile::new();
     if matches.is_present("simple") {
         let windows: usize = matches.value_of("simple").unwrap().parse().unwrap();
         iterate_test(&graph, threads, & mut paf_result, &windows);
     }
 
     paf_result.make_stats();
-    paf_result.to_file("test");
+    paf_result.to_file(output);
 }

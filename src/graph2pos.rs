@@ -4,7 +4,7 @@ use std::thread;
 
 pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
     let mut vec_new: Vec<Vec<T>> = Vec::new();
-    for x in 0..numb{
+    for _x in 0..numb{
         vec_new.push(Vec::new());
     }
     let each_size = (it.len() as f64 /numb as f64).ceil() as usize;
@@ -28,16 +28,16 @@ pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
 pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) -> HashMap<String, Vec<usize>>{
     eprintln!("Indexing genomes");
 
-    let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
-    let mut result = Arc::new(Mutex::new(result_hm));
-    let mut hm = Arc::new(graph.nodes.clone());
+    let result_hm: HashMap<String, Vec<usize>> = HashMap::new();
+    let result = Arc::new(Mutex::new(result_hm));
+    let hm = Arc::new(graph.nodes.clone());
     let k = graph.paths.clone();
     let k2 = chunk_inplace(k, threads);
     let mut handles: Vec<_> = Vec::new();
     //println!("sda das {}", k2.len());
     for chunk in k2{
-        let mut g2 = Arc::clone(&hm);
-        let mut tess1 = Arc::clone(&result);
+        let g2 = Arc::clone(&hm);
+        let tess1 = Arc::clone(&result);
         let handle = thread::spawn(move || {
             //eprintln!("I spawned");
             for c in chunk{

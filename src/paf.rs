@@ -5,13 +5,13 @@ use std::io::{Write, BufWriter};
 
 #[derive(Debug, Clone)]
 /// PAF file
-pub struct Paf_file{
+pub struct PafFile {
     pub paf_entries: Vec<Paf>,
     paf_len: usize,
     paf_flags: HashMap<u8, String>,
 }
 
-impl Paf_file{
+impl PafFile {
     pub fn new() -> Self{
         Self{
             paf_entries: Vec::new(),
@@ -57,7 +57,7 @@ pub struct Paf{
     pub matches_numb: u32,
     pub alignment_len: u32,
     pub mapping_qual: u8,
-    pub flag: cg_flag,
+    pub flag: Vec<(u32, u32)>,
     pub cg_flag: HashMap<u8, String>,
 
 }
@@ -78,7 +78,7 @@ impl Paf {
             matches_numb: 32,
             alignment_len: 32,
             mapping_qual: 255,
-            flag: cg_flag::new(),
+            flag: Vec::new(),
             cg_flag: HashMap::new(),
         }
     }
@@ -87,23 +87,23 @@ impl Paf {
         let mut vec_new: Vec<(u32, u32)> = Vec::new();
 
         let mut element: (u32, u32)  = (0,0);
-        for x in 0..self.flag.flag.len(){
+        for x in 0..self.flag.len(){
 
-            if element.0 == self.flag.flag[x].0{
-                element.1 += self.flag.flag[x].1.clone();
+            if element.0 == self.flag[x].0{
+                element.1 += self.flag[x].1.clone();
             } else {
                 vec_new.push(element);
-                element = self.flag.flag[x].clone();
+                element = self.flag[x].clone();
             }
         }
         vec_new.push(element);
         vec_new.remove(0);
-        self.flag.flag = vec_new;
+        self.flag = vec_new;
     }
 
     pub fn printing(self: &Self) -> String{
         let mut s = "".to_string();
-        for x in self.flag.flag.iter(){
+        for x in self.flag.iter(){
             if x.0 == 1{
                 s.push_str(&x.1.clone().to_string());
                 s.push_str("=");
@@ -126,7 +126,7 @@ impl Paf {
 
     pub fn matches(self: & mut Self){
         let mut count = 0;
-        for x in self.flag.flag.iter(){
+        for x in self.flag.iter(){
             if x.0 == 1{
                 count += x.1;
             }
@@ -136,7 +136,7 @@ impl Paf {
 
     pub fn alignment_length(self: &mut Self){
         let mut lenns = 0;
-        for x in self.flag.flag.iter(){
+        for x in self.flag.iter(){
             lenns += x.1;
 
         }
@@ -178,15 +178,3 @@ pub fn helpdir(b: &bool) -> &str{
 // 4 = deletion
 
 
-#[derive(Debug, Clone)]
-pub struct cg_flag{
-    pub flag: Vec<(u32, u32)>,
-}
-
-impl cg_flag{
-    pub fn new() -> Self {
-        Self{
-            flag: Vec::new()
-        }
-    }
-}
