@@ -84,7 +84,6 @@ impl Paf {
     }
 
     pub fn merging(self: & mut Self){
-        eprintln!("{:?}", self.flag.flag);
         let mut vec_new: Vec<(u32, u32)> = Vec::new();
 
         let mut element: (u32, u32)  = (0,0);
@@ -97,8 +96,8 @@ impl Paf {
                 element = self.flag.flag[x].clone();
             }
         }
-        vec_new.pop();
         vec_new.push(element);
+        vec_new.remove(0);
         self.flag.flag = vec_new;
     }
 

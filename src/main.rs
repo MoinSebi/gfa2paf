@@ -63,7 +63,7 @@ fn main() {
     let mut paf_result = Paf_file::new();
     if matches.is_present("simple") {
         let windows: usize = matches.value_of("simple").unwrap().parse().unwrap();
-        iterate_test(&graph, threads, & mut paf_result);
+        iterate_test(&graph, threads, & mut paf_result, &windows);
     }
 
     paf_result.make_stats();

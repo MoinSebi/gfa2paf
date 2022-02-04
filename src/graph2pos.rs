@@ -26,7 +26,7 @@ pub fn chunk_inplace<T>(it: Vec<T>, numb: usize) -> Vec<Vec<T>>{
 /// starting with 0
 /// For each path it get the position for each index (node)
 pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) -> HashMap<String, Vec<usize>>{
-    eprintln!("Indeing genomes");
+    eprintln!("Indexing genomes");
 
     let mut result_hm: HashMap<String, Vec<usize>> = HashMap::new();
     let mut result = Arc::new(Mutex::new(result_hm));
@@ -34,7 +34,6 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) -> HashMap<String, Vec<u
     let k = graph.paths.clone();
     let k2 = chunk_inplace(k, threads);
     let mut handles: Vec<_> = Vec::new();
-    eprintln!("{}", k2[0].len());
     //println!("sda das {}", k2.len());
     for chunk in k2{
         let mut g2 = Arc::clone(&hm);
@@ -42,7 +41,7 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) -> HashMap<String, Vec<u
         let handle = thread::spawn(move || {
             //eprintln!("I spawned");
             for c in chunk{
-                eprintln!("{}", c.name);
+                eprintln!("Genome: {}", c.name);
                 let mut position = 0;
                 let mut vec_pos: Vec<usize> = Vec::new();
                 for y in c.nodes.iter(){
@@ -60,11 +59,11 @@ pub fn g2p(graph: & gfaR_wrapper::NGfa, threads: usize) -> HashMap<String, Vec<u
         handles.push(handle);
         //eprintln!("hello");
     }
-    eprintln!("Number of handels {}", handles.len());
 
     for handle in handles {
         handle.join().unwrap()
     }
+    eprintln!("");
     let out =  result.lock().unwrap().clone();
     out
 

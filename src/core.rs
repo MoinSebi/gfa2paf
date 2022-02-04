@@ -13,23 +13,19 @@ use std::cmp::min;
 /// E.g. iterate_path is the first function
 /// Multithreading base function
 /// Output are a list of PAFs
-pub fn iterate_test(graph: &NGfa, threads: usize, paffile: &mut Paf_file) {
-    eprintln!("Make pairs and chunks");
+pub fn iterate_test(graph: &NGfa, threads: usize, paffile: &mut Paf_file, maxdistance: &usize) {
     // Get pairs and
     let pairs = get_all_pairs2(graph);
     let chunks = chunk_inplace(pairs, threads);
 
-    eprintln!("Done");
     let k = Arc::new(g2p(graph, threads));
     let k2 = Arc::new(graph.nodes.clone());
 
-    eprintln!("Done2");
-    eprintln!("{}", chunks[1].len() );
-    eprintln!("{}", chunks.len());
     // Resultat
     let mut result = Vec::new();
     let mut rm = Arc::new(Mutex::new(result));
     let mut handles = Vec::new();
+    let mut dist = Arc::new(maxdistance.clone());
 
 
     // Iterate over chunks
@@ -37,18 +33,17 @@ pub fn iterate_test(graph: &NGfa, threads: usize, paffile: &mut Paf_file) {
         let r = Arc::clone(&rm);
         let mut r2 = Arc::clone(&k);
         let r3 = Arc::clone(&k2);
+        let ko = Arc::clone(&dist);
         let handle = thread::spawn(move || {
             for pair in chunk.iter(){
-                eprintln!("{} {}", pair.0.name, pair.1.name);
-
-                let h = bifurcation_simple(&(&pair.0, &pair.1), &r2, &r3, 20);
+                eprintln!("Working on this pair: {} {}", pair.0.name, pair.1.name);
+                let h = bifurcation_simple(&(&pair.0, &pair.1), &r2, &r3, **&ko);
                 let mut rr = r.lock().unwrap();
                 rr.extend(h);
             }
         });
         handles.push(handle);
     }
-    eprintln!("{}", handles.len());
 
     for handle in handles {
         handle.join().unwrap()
@@ -65,7 +60,6 @@ pub fn iterate_test(graph: &NGfa, threads: usize, paffile: &mut Paf_file) {
 
 /// Stop the paf when there is more than X "different" sequence
 pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec<usize>>, g2n: &HashMap<u32, NNode>, maxdistance: usize) -> Vec<Paf>{
-    eprintln!("Get shared nodes");
     let shared = get_shared_direction(pair.0, pair.1);
     let mut paf_vector: Vec<Paf> = Vec::new();
     let shared_vec =  (pair.0, pair.1);
@@ -91,7 +85,6 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
 
 
 
-    eprintln!("Iterate");
     let mut position = 0;
     // Iterate over each pair
     for x in 0..pair.0.nodes.len() {
@@ -101,17 +94,14 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
 
         // Wenn shared
         if shared.contains(node) {
-            eprintln!("{}", "hit");
             // Iterate over the other path (for the last shared) and check if it is the same
             distance2 = 0;
             let mut p = 0;
             'tt: for y in last_index..pair.1.nodes.len() {
-                eprintln!("dsadada");
                 p = y.clone();
                 // If found
                 if node == &(pair.1.nodes[y], pair.1.dir[y]) {
                     // If there is a open paf
-                    eprintln!("{}", open);
                     if open {
                         if (distance1+ distance2) ==0{
                             last_i = x;
@@ -158,7 +148,6 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
                         // there is nothing open
                         // Open a new
                     else {
-                        eprintln!("tttt");
                         paf_entry = Paf::new(&pair.0.name, &pair.1.name, &(gfa2pos.get(&pair.0.name).unwrap()[x] as u32), &(gfa2pos.get(&pair.1.name).unwrap()[y] as u32), &(maxn1 as u32), &(maxn2 as u32));
 
                         paf_entry.flag.flag.push((1, g2n.get(pair.0.nodes.get(x).unwrap()).unwrap().len as u32));
