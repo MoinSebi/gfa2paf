@@ -36,7 +36,7 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
         eprintln!("{}", x);
         let node = &(pair.0.nodes[x], pair.0.dir[x]);
 
-        // let ii = next_index(pair, &last_i, &last_index, &shared, &gfa2pos);
+        let ii = next_index(pair, &last_i, &last_index, &shared, &gfa2pos);
         // //eprintln!("{:?} {:?}", ii, (last_i, last_index));
         //
         // if ii != (last_i, last_index){
