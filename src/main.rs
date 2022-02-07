@@ -4,6 +4,9 @@ use crate::core::{iterate_test};
 mod paf;
 mod core;
 mod graph2pos;
+mod simple;
+mod check_distance;
+
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 
