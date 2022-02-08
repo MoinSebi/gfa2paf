@@ -162,3 +162,15 @@ pub fn bifurcation_simple(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec
     }
     paf_vector
 }
+
+pub fn test1(pair: &(&NPath, &NPath), gfa2pos: &HashMap<String, Vec<usize>>, g2n: &HashMap<u32, NNode>, maxdistance: usize) -> Vec<Paf>{
+    let result: Vec<Paf> = Vec::new();
+    let shared = get_shared_direction(pair.0, pair.1);
+    let mut index: (usize, usize) = (0,0);
+
+
+
+
+    result
+
+}
